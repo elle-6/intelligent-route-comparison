@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intelligenter Routenvergleich mit Comfort Score</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #e0f2fe 0%, #ddd6fe 100%);
+      min-height: 100vh;
+      padding: 24px;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    
+    h1 {
+      font-size: 32px;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+    
+    .subtitle {
+      color: #6b7280;
+      font-size: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .weather-widget {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: #dbeafe;
+      padding: 16px 24px;
+      border-radius: 12px;
+      margin-top: 16px;
+    }
+    
+    .weather-temp {
+      font-size: 28px;
+      font-weight: bold;
+      color: #111827;
+    }
+    
+    .weather-condition {
+      font-size: 14px;
+      color: #4b5563;
+    }
+    
+    .search-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    
+    @media (max-width: 768px) {
+      .search-form {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .form-group {
+      position: relative;
+    }
+    
+    label {
+      display: block;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.2s;
+    }
+    
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+    
+    .suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 2px solid #d1d5db;
+      border-radius: 8px;
+      margin-top: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      z-index: 10;
+      display: none;
+    }
+    
+    .suggestions.active {
+      display: block;
+    }
+    
+    .suggestion-item {
+      padding: 12px 16px;
+      cursor: pointer;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .suggestion-item:last-child {
+      border-bottom: none;
+    }
+    
+    .suggestion-item:hover {
+      background: #dbeafe;
+    }
+    
+    .search-button {
+      grid-column: 1 / -1;
+      background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+      color: white;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .search-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
+    }
+    
+    .search-button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .info-box {
+      background: linear-gradient(135deg, #f3e8ff 0%, #fce7f3 100%);
+      padding: 24px;
+      border-radius: 12px;
+      line-height: 1.6;
+      color: #374151;
+    }
+    
+    .info-box h3 {
+      color: #111827;
+      margin-bottom: 12px;
+      font-size: 20px;
+    }
+    
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    
+    @media (max-width: 768px) {
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .info-item {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .info-item-title {
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 4px;
+    }
+    
+    .info-item-text {
+      font-size: 14px;
+      color: #4b5563;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      font-size: 18px;
+      color: #6b7280;
+    }
+    
+    .route-card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      padding: 24px;
+      margin-bottom: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .route-card:hover {
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      transform: translateY(-2px);
+    }
+    
+    .route-card.selected {
+      border: 3px solid #3b82f6;
+    }
+    
+    .route-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    
+    .comfort-badge {
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 24px;
+      display: inline-block;
+    }
+    
+    .comfort-excellent {
+      background: #dcfce7;
+      color: #15803d;
+    }
+    
+    .comfort-good {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    
+    .comfort-fair {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    
+    .comfort-poor {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    
+    .comfort-label {
+      font-size: 12px;
+      display: block;
+      margin-top: 4px;
+      font-weight: normal;
+    }
+    
+    .recommended-badge {
+      background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    .route-times {
+      text-align: right;
+    }
+    
+    .time-display {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 28px;
+      font-weight: bold;
+      color: #111827;
+      justify-content: flex-end;
+    }
+    
+    .duration {
+      font-size: 14px;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+    
+    .route-segments {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    
+    .segment-badge {
+      background: #3b82f6;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    .arrow {
+      color: #9ca3af;
+    }
+    
+    .factors-section {
+      border-top: 2px solid #e5e7eb;
+      padding-top: 16px;
+      margin-top: 16px;
+      display: none;
+    }
+    
+    .factors-section.active {
+      display: block;
+    }
+    
+    .factors-title {
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+    
+    .factors-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    
+    @media (max-width: 768px) {
+      .factors-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .factor-item {
+      padding: 12px;
+      border-radius: 8px;
+      display: flex;
+      gap: 12px;
+    }
+    
+    .factor-positive {
+      background: #dcfce7;
+    }
+    
+    .factor-negative {
+      background: #fee2e2;
+    }
+    
+    .factor-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    
+    .factor-name {
+      font-weight: 600;
+      color: #111827;
+      font-size: 14px;
+    }
+    
+    .factor-impact {
+      font-weight: 600;
+      margin-left: 8px;
+    }
+    
+    .factor-positive .factor-impact {
+      color: #15803d;
+    }
+    
+    .factor-negative .factor-impact {
+      color: #991b1b;
+    }
+    
+    .factor-description {
+      font-size: 12px;
+      color: #4b5563;
+      margin-top: 4px;
+    }
+    
+    .route-details {
+      border-top: 2px solid #e5e7eb;
+      padding-top: 16px;
+      margin-top: 16px;
+    }
+    
+    .route-step {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .step-indicator {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .step-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #3b82f6;
+    }
+    
+    .step-dot.end {
+      background: #10b981;
+    }
+    
+    .step-line {
+      width: 2px;
+      height: 48px;
+      background: #93c5fd;
+    }
+    
+    .step-content {
+      flex: 1;
+    }
+    
+    .step-station {
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 4px;
+    }
+    
+    .step-time {
+      font-size: 14px;
+      color: #6b7280;
+    }
+    
+    .step-vehicle {
+      margin-top: 8px;
+      font-size: 14px;
+    }
+    
+    .vehicle-badge {
+      display: inline-block;
+      background: #dbeafe;
+      color: #1e40af;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      margin-right: 8px;
+    }
+    
+    .step-walk {
+      font-size: 14px;
+      color: #6b7280;
+      font-style: italic;
+      margin-top: 4px;
+    }
+    
+    .click-hint {
+      text-align: center;
+      color: #6b7280;
+      font-size: 14px;
+      margin-top: 12px;
+    }
+    
+    .explanation-box {
+      background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+      padding: 24px;
+      border-radius: 12px;
+      margin-top: 24px;
+    }
+    
+    .explanation-box h3 {
+      color: #111827;
+      margin-bottom: 12px;
+      font-size: 18px;
+    }
+    
+    .explanation-box ul {
+      list-style: disc;
+      margin-left: 20px;
+      line-height: 1.8;
+    }
+    
+    .explanation-box li {
+      margin-bottom: 8px;
+      color: #374151;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header mit Wetteranzeige -->
+    <div class="card">
+      <h1>🚊 Intelligenter Routenvergleich</h1>
+      <p class="subtitle">Nicht nur die schnellste Route - sondern die angenehmste</p>
+      <div id="weatherWidget" class="weather-widget" style="display: none;">
+        <div id="weatherIcon" style="font-size: 32px;"></div>
+        <div>
+          <div class="weather-temp" id="weatherTemp">--°C</div>
+          <div class="weather-condition" id="weatherCondition">Lädt...</div>
+          <div id="weatherWind" style="font-size: 12px; color: #6b7280;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Suchformular -->
+    <div class="card">
+      <form id="searchForm" class="search-form">
+        <div class="form-group">
+          <label for="fromStation">Von</label>
+          <input type="text" id="fromStation" placeholder="Starthaltestelle eingeben...">
+          <div id="fromSuggestions" class="suggestions"></div>
+        </div>
+        
+        <div class="form-group">
+          <label for="toStation">Nach</label>
+          <input type="text" id="toStation" placeholder="Zielhaltestelle eingeben...">
+          <div id="toSuggestions" class="suggestions"></div>
+        </div>
+        
+        <button type="submit" class="search-button" id="searchButton">
+          🔍 Routen vergleichen
+        </button>
+      </form>
+    </div>
+
+    <!-- Info-Box (wird angezeigt, wenn keine Ergebnisse vorhanden) -->
+    <div id="infoBox" class="card info-box">
+      <h3>Was ist der Comfort Score?</h3>
+      <p>Unser intelligenter Comfort Score bewertet jede Route nicht nur nach Geschwindigkeit, sondern nach tatsächlichem Reisekomfort. Er berücksichtigt Faktoren, die andere Apps ignorieren.</p>
+      <div class="info-grid">
+        <div class="info-item">
+          <div style="font-size: 20px;">🌧️</div>
+          <div>
+            <div class="info-item-title">Wetter-Intelligenz</div>
+            <div class="info-item-text">Wartezeiten bei Regen, Wind oder extremen Temperaturen werden negativ bewertet</div>
+          </div>
+        </div>
+        <div class="info-item">
+          <div style="font-size: 20px;">📈</div>
+          <div>
+            <div class="info-item-title">Umstiegs-Analyse</div>
+            <div class="info-item-text">Direktverbindungen und komfortable Umsteigezeiten werden bevorzugt</div>
+          </div>
+        </div>
+        <div class="info-item">
+          <div style="font-size: 20px;">👥</div>
+          <div>
+            <div class="info-item-title">Auslastungs-Prognose</div>
+            <div class="info-item-text">Stoßzeiten mit hoher Auslastung reduzieren den Komfort</div>
+          </div>
+        </div>
+        <div class="info-item">
+          <div style="font-size: 20px;">⏱️</div>
+          <div>
+            <div class="info-item-title">Zeit-Effizienz</div>
+            <div class="info-item-text">Optimale Balance zwischen Reisezeit und Komfort</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Anzeige -->
+    <div id="loading" class="card loading" style="display: none;">
+      <div>🔄 Suche Verbindungen und berechne Comfort Scores...</div>
+    </div>
+
+    <!-- Ergebnisse -->
+    <div id="results"></div>
+
+    <!-- Erklärung (wird nach den Ergebnissen angezeigt) -->
+    <div id="explanationBox" class="card explanation-box" style="display: none;">
+      <h3>🧠 Wie funktioniert die Bewertung?</h3>
+      <p style="margin-bottom: 12px;"><strong>Der Comfort Score</strong> beginnt bei 100 Punkten und wird durch verschiedene Faktoren beeinflusst:</p>
+      <ul>
+        <li><strong>Wetterbedingungen:</strong> Wartezeiten bei Regen, Wind oder extremen Temperaturen reduzieren den Score</li>
+        <li><strong>Umstiege:</strong> Jeder Umstieg bedeutet Stress - Direktverbindungen bekommen Bonuspunkte</li>
+        <li><strong>Umsteigezeiten:</strong> Zu kurze Zeiten (&lt;4 Min.) sind riskant, zu lange (&gt;10 Min.) unangenehm</li>
+        <li><strong>Tageszeit:</strong> Stoßzeiten (7-9 Uhr, 17-19 Uhr) bedeuten hohe Auslastung</li>
+        <li><strong>Reisedauer:</strong> Sehr lange Fahrten reduzieren den Komfort</li>
+      </ul>
+      <p style="margin-top: 12px; font-size: 12px; color: #6b7280;">
+        <strong>Bewertungsskala:</strong> 80-100 = Exzellent | 60-79 = Gut | 40-59 = Akzeptabel | 0-39 = Schwierig
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // ===== GLOBALE VARIABLEN =====
+    // Diese Variablen speichern den aktuellen Zustand der Anwendung
+    let currentWeather = null;
+    let selectedRouteIndex = null;
+    let allRoutes = [];
+    
+    // Beispiel-Haltestellen für schnelles Testen
+    // In einer echten Anwendung würden diese von einer API kommen
+    const exampleStations = [
+      { name: 'Zürich HB', coords: { lat: 47.3781, lon: 8.5402 } },
+      { name: 'Zürich, Bellevue', coords: { lat: 47.3663, lon: 8.5458 } },
+      { name: 'Zürich, Paradeplatz', coords: { lat: 47.3698, lon: 8.5396 } },
+      { name: 'Zürich, Central', coords: { lat: 47.3754, lon: 8.5406 } },
+      { name: 'Zürich Oerlikon', coords: { lat: 47.4108, lon: 8.5446 } },
+      { name: 'Zürich Altstetten', coords: { lat: 47.3915, lon: 8.4889 } },
+      { name: 'Zürich Stadelhofen', coords: { lat: 47.3660, lon: 8.5490 } },
+      { name: 'Zürich, Bürkliplatz', coords: { lat: 47.3665, lon: 8.5389 } }
+    ];
+
+    // ===== WETTER-FUNKTIONEN =====
+    // Diese Funktion lädt die aktuellen Wetterdaten von der Open-Meteo API
+    async function loadWeather() {
+      try {
+        // Open-Meteo ist eine kostenlose Wetter-API ohne Registrierung
+        // Wir fragen die Daten für Zürich ab (Koordinaten: 47.3769, 8.5417)
+        const url = 'https://api.open-meteo.com/v1/forecast?latitude=47.3769&longitude=8.5417&current=temperature_2m,precipitation,rain,windspeed_10m,weathercode&timezone=Europe/Zurich';
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        // Die API gibt uns einen Wettercode zurück, den wir interpretieren müssen
+        const weatherCode = data.current.weathercode;
+        let condition = 'Klar';
+        let icon = '☀️';
+        
+        if (weatherCode >= 80) {
+          condition = 'Gewitter';
+          icon = '⛈️';
+        } else if (weatherCode >= 71) {
+          condition = 'Schnee';
+          icon = '❄️';
+        } else if (weatherCode >= 51) {
+          condition = 'Regen';
+          icon = '🌧️';
+        } else if (weatherCode >= 45) {
+          condition = 'Nebel';
+          icon = '🌫️';
+        } else if (weatherCode >= 1) {
+          condition = 'Bewölkt';
+          icon = '☁️';
+        }
+        
+        // Speichern der Wetterdaten in einer globalen Variable
+        currentWeather = {
+          temperature: Math.round(data.current.temperature_2m),
+          precipitation: data.current.precipitation || 0,
+          windSpeed: Math.round(data.current.windspeed_10m),
+          condition: condition,
+          icon: icon
+        };
+        
+        // Aktualisieren der Wetteranzeige im DOM
+        updateWeatherDisplay();
+        
+      } catch (error) {
+        console.error('Fehler beim Laden der Wetterdaten:', error);
+      }
+    }
+
+    function updateWeatherDisplay() {
+      if (!currentWeather) return;
+      
+      const widget = document.getElementById('weatherWidget');
+      const icon = document.getElementById('weatherIcon');
+      const temp = document.getElementById('weatherTemp');
+      const cond = document.getElementById('weatherCondition');
+      const wind = document.getElementById('weatherWind');
+      
+      widget.style.display = 'flex';
+      icon.textContent = currentWeather.icon;
+      temp.textContent = `${currentWeather.temperature}°C`;
+      cond.textContent = currentWeather.condition;
+      
+      if (currentWeather.windSpeed > 10) {
+        wind.textContent = `💨 Wind: ${currentWeather.windSpeed} km/h`;
+      } else {
+        wind.textContent = '';
+      }
+    }
+
+    // ===== AUTOCOMPLETE-FUNKTIONEN =====
+    // Diese Funktionen implementieren die Autovervollständigung für die Haltestellensuche
+    function searchStations(query) {
+      if (query.length < 2) return [];
+      // Einfache Suche: Filtere alle Stationen, die den Suchbegriff enthalten
+      return exampleStations.filter(station => 
+        station.name.toLowerCase().includes(query.toLowerCase())
+      );
+    }
+
+    function showSuggestions(inputId, suggestions) {
+      const suggestionsDiv = document.getElementById(inputId + 'Suggestions');
+      
+      if (suggestions.length === 0) {
+        suggestionsDiv.classList.remove('active');
+        return;
+      }
+      
+      // Baue das HTML für die Vorschläge
+      suggestionsDiv.innerHTML = suggestions.map(station => 
+        `<div class="suggestion-item" onclick="selectStation('${inputId}', '${station.name}')">${station.name}</div>`
+      ).join('');
+      
+      suggestionsDiv.classList.add('active');
+    }
+
+    function selectStation(inputId, stationName) {
+      document.getElementById(inputId).value = stationName;
+      document.getElementById(inputId + 'Suggestions').classList.remove('active');
+    }
+
+    // ===== COMFORT SCORE BERECHNUNG =====
+    // Dies ist das Herzstück unserer Innovation
+    // Diese Funktion bewertet eine Route nach verschiedenen Komfort-Kriterien
+    function calculateComfortScore(route, weather) {
+      let score = 100; // Wir beginnen mit einem perfekten Score
+      const factors = []; // Hier sammeln wir alle Faktoren, die den Score beeinflussen
+      
+      // FAKTOR 1: Anzahl der Umstiege
+      // Wir zählen, wie viele Umstiege nötig sind
+      // Ein "journey" in den sections ist eine Fahrt mit einem Verkehrsmittel
+      const transfers = route.sections.filter(s => s.journey).length - 1;
+      
+      if (transfers > 0) {
+        const penalty = transfers * 8;
+        score -= penalty;
+        factors.push({
+          name: 'Umstiege',
+          impact: -penalty,
+          icon: '🔄',
+          description: `${transfers} Umstieg${transfers > 1 ? 'e' : ''} erforderlich`,
+          positive: false
+        });
+      } else {
+        score += 5;
+        factors.push({
+          name: 'Direktverbindung',
+          impact: +5,
+          icon: '✅',
+          description: 'Keine Umstiege - entspanntes Reisen',
+          positive: true
+        });
+      }
+      
+// FAKTOR 2: Wetter-Einfluss
+if (weather) {
+  // Berechne die Gesamtwartezeit zwischen den Verbindungen
+  let totalWaitTime = 0;
+  route.sections.forEach((section, index) => {
+    if (index > 0 && section.journey) {
+      const prevArrival = new Date(route.sections[index - 1].arrival.departure);
+      const nextDeparture = new Date(section.departure.departure);
+      const waitMinutes = (nextDeparture - prevArrival) / 60000;
+      totalWaitTime += waitMinutes;
+    }
+  });
+
+  // Regen + Wartezeit
+  if (weather.precipitation > 0 && totalWaitTime > 3) {
+    const penalty = Math.min(15, totalWaitTime * 1.5);
+    score -= penalty;
+    factors.push({
+      name: 'Regen',
+      impact: -penalty,
+      icon: '🌧️',
+      description: `${totalWaitTime.toFixed(0)} Min. Wartezeit bei Regen`,
+      positive: false
+    });
+  }
+
+  // Starker Wind macht das Warten unangenehm
+  if (weather.windSpeed > 20) {
+    score -= 5;
+    factors.push({
+      name: 'Wind',
+      impact: -5,
+      icon: '💨',
+      description: `Starker Wind (${weather.windSpeed} km/h)`,
+      positive: false
+    });
+  }
+
+  // Extreme Temperaturen
+  if (weather.temperature < 0) {
+    score -= 8;
+    factors.push({
+      name: 'Kälte',
+      impact: -8,
+      icon: '🥶',
+      description: `Sehr kalt (${weather.temperature}°C)`,
+      positive: false
+    });
+  } else if (weather.temperature > 30) {
+    score -= 6;
+    factors.push({
+      name: 'Hitze',
+      impact: -6,
+      icon: '☀️',
+      description: `Sehr heiß (${weather.temperature}°C)`,
+      positive: false
+    });
+  }
+}
+
+      
+      // FAKTOR 3: Reisezeit-Effizienz
+      // Längere Reisen sind generell weniger komfortabel
+      const durationParts = route.duration.split(':');
+     const durationMinutes = parseInt(durationParts[1]);
+   
+
+
+      
+      if (durationMinutes > 30) {
+        const penalty = Math.floor((durationMinutes - 30) / 10) * 3;
+        score -= penalty;
+        factors.push({
+          name: 'Reisedauer',
+          impact: -penalty,
+          icon: '⏱️',
+          description: `Längere Fahrt (${durationMinutes} Minuten)`,
+          positive: false
+        });
+      }
+      
+      // FAKTOR 4: Tageszeit und Auslastung
+      // Zu Stoßzeiten sind die Verkehrsmittel voller
+      const departureTime = new Date(route.sections[0].departure.departure);
+      const hour = departureTime.getHours();
+      
+      if ((hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19)) {
+        score -= 10;
+        factors.push({
+          name: 'Stoßzeit',
+          impact: -10,
+          icon: '👥',
+          description: 'Hohe Auslastung zu erwarten',
+          positive: false
+        });
+      } else if (hour >= 10 && hour <= 16) {
+        score += 5;
+        factors.push({
+          name: 'Nebenverkehrszeit',
+          impact: +5,
+          icon: '✅',
+          description: 'Niedrige Auslastung zu erwarten',
+          positive: true
+        });
+      }
+      
+      // FAKTOR 5: Umsteigezeit-Analyse
+      // Kurze Umsteigezeiten sind stressig, sehr lange sind langweilig
+      route.sections.forEach((section, index) => {
+        if (index > 0 && section.journey) {
+          const prevArrival = new Date(route.sections[index - 1].arrival.departure);
+          const nextDeparture = new Date(section.departure.departure);
+          const transferMinutes = (nextDeparture - prevArrival) / 60000;
+          
+          if (transferMinutes < 4) {
+            score -= 12;
+            factors.push({
+              name: 'Knapper Umstieg',
+              impact: -12,
+              icon: '⚠️',
+              description: `Nur ${transferMinutes.toFixed(0)} Min. Umsteigezeit - riskant!`,
+              positive: false
+            });
+          } else if (transferMinutes > 10) {
+            score -= 5;
+            factors.push({
+              name: 'Lange Wartezeit',
+              impact: -5,
+              icon: '⏰',
+              description: `${transferMinutes.toFixed(0)} Min. Wartezeit beim Umstieg`,
+              positive: false
+            });
+          }
+        }
+      });
+      
+      // Der Score sollte nicht unter 0 fallen
+      score = Math.max(0, score);
+      
+      // Bestimme die Bewertungskategorie
+      let rating = 'poor';
+      if (score >= 80) rating = 'excellent';
+      else if (score >= 60) rating = 'good';
+      else if (score >= 40) rating = 'fair';
+      
+      return {
+        score: Math.round(score),
+        factors: factors,
+        rating: rating
+      };
+    }
+
+    // ===== ROUTEN-SUCHE =====
+    // Diese Funktion führt die eigentliche Routensuche durch
+    async function searchRoutes(event) {
+      event.preventDefault();
+      
+      const fromStation = document.getElementById('fromStation').value;
+      const toStation = document.getElementById('toStation').value;
+      
+      if (!fromStation || !toStation) {
+        alert('Bitte wählen Sie Start- und Zielhaltestelle aus');
+        return;
+      }
+      
+      // UI-Updates: Loading anzeigen, andere Bereiche ausblenden
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('infoBox').style.display = 'none';
+      document.getElementById('results').innerHTML = '';
+      document.getElementById('explanationBox').style.display = 'none';
+      document.getElementById('searchButton').disabled = true;
+      
+      try {
+        // Abfrage der transport.opendata.ch API
+        // Diese API liefert uns bis zu 6 verschiedene Verbindungen
+        const url = `https://transport.opendata.ch/v1/connections?from=${encodeURIComponent(fromStation)}&to=${encodeURIComponent(toStation)}&limit=6`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.connections && data.connections.length > 0) {
+          // Für jede Verbindung berechnen wir den Comfort Score
+          const routesWithScores = data.connections.map(connection => {
+            const analysis = calculateComfortScore(connection, currentWeather);
+            return {
+              ...connection,
+              comfortScore: analysis.score,
+              comfortFactors: analysis.factors,
+              comfortRating: analysis.rating
+            };
+          });
+          
+          // Sortieren nach Comfort Score (höchster zuerst)
+          routesWithScores.sort((a, b) => b.comfortScore - a.comfortScore);
+          
+          // Speichern für spätere Verwendung
+          allRoutes = routesWithScores;
+          
+          // Anzeigen der Ergebnisse
+          displayRoutes(routesWithScores);
+          
+          // Erklärungsbox anzeigen
+          document.getElementById('explanationBox').style.display = 'block';
+        } else {
+          alert('Keine Verbindungen gefunden');
+          document.getElementById('infoBox').style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Fehler beim Laden der Routen:', error);
+        alert('Fehler beim Laden der Verbindungen. Bitte versuchen Sie es erneut.');
+        document.getElementById('infoBox').style.display = 'block';
+      } finally {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('searchButton').disabled = false;
+      }
+    }
+
+    // ===== ERGEBNISSE ANZEIGEN =====
+    // Diese Funktion erstellt das HTML für alle gefundenen Routen
+    function displayRoutes(routes) {
+      const resultsDiv = document.getElementById('results');
+      
+      // Header mit Anzahl der Ergebnisse
+      const header = document.createElement('div');
+      header.className = 'card';
+      header.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h2 style="font-size: 24px; color: #111827;">${routes.length} Verbindungen gefunden</h2>
+          <div style="font-size: 14px; color: #6b7280;">Sortiert nach Comfort Score</div>
+        </div>
+      `;
+      resultsDiv.appendChild(header);
+      
+      // Jede Route als Karte anzeigen
+      routes.forEach((route, index) => {
+        const routeCard = createRouteCard(route, index);
+        resultsDiv.appendChild(routeCard);
+      });
+    }
+
+    // ===== ROUTEN-KARTE ERSTELLEN =====
+    // Diese Funktion erstellt das HTML für eine einzelne Route
+    function createRouteCard(route, index) {
+      const card = document.createElement('div');
+      card.className = 'route-card';
+      card.id = `route-${index}`;
+      
+      // Comfort Score Badge-Klasse bestimmen
+      let badgeClass = 'comfort-poor';
+      let ratingText = 'Schwierig';
+      if (route.comfortRating === 'excellent') {
+        badgeClass = 'comfort-excellent';
+        ratingText = 'Exzellent';
+      } else if (route.comfortRating === 'good') {
+        badgeClass = 'comfort-good';
+        ratingText = 'Gut';
+      } else if (route.comfortRating === 'fair') {
+        badgeClass = 'comfort-fair';
+        ratingText = 'Akzeptabel';
+      }
+      
+      // Zeiten formatieren
+      const depTime = formatTime(route.from.departure);
+      const arrTime = formatTime(route.to.arrival);
+      const duration = formatDuration(route.duration);
+      
+      // Segmente (Linien) sammeln
+      const segments = route.sections
+        .filter(s => s.journey)
+        .map(s => `<span class="segment-badge">${s.journey.category} ${s.journey.number}</span>`)
+        .join('<span class="arrow">→</span>');
+      
+      // Basis-HTML der Karte
+      card.innerHTML = `
+        <div class="route-header">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div class="comfort-badge ${badgeClass}">
+              ${route.comfortScore}
+              <span class="comfort-label">${ratingText}</span>
+            </div>
+            ${index === 0 ? '<div class="recommended-badge">⭐ Empfohlen</div>' : ''}
+          </div>
+          <div class="route-times">
+            <div class="time-display">
+              <span>${depTime}</span>
+              <span class="arrow">→</span>
+              <span>${arrTime}</span>
+            </div>
+            <div class="duration">Reisezeit: ${duration}</div>
+          </div>
+        </div>
+        <div class="route-segments">${segments}</div>
+        <div class="factors-section" id="factors-${index}">
+          ${createFactorsHTML(route.comfortFactors)}
+          ${createRouteDetailsHTML(route)}
+        </div>
+        <div class="click-hint" id="hint-${index}">Klicken für Details und vollständige Analyse</div>
+      `;
+      
+      // Click-Handler hinzufügen
+      card.onclick = () => toggleRouteDetails(index);
+      
+      return card;
+    }
+
+    // ===== FAKTOREN HTML ERSTELLEN =====
+    function createFactorsHTML(factors) {
+      const factorsHTML = factors.map(factor => {
+        const itemClass = factor.positive ? 'factor-positive' : 'factor-negative';
+        const impactSign = factor.impact > 0 ? '+' : '';
+        
+        return `
+          <div class="factor-item ${itemClass}">
+            <div class="factor-icon">${factor.icon}</div>
+            <div style="flex: 1;">
+              <div class="factor-name">
+                ${factor.name}
+                <span class="factor-impact">${impactSign}${factor.impact}</span>
+              </div>
+              <div class="factor-description">${factor.description}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      return `
+        <div class="factors-title">Comfort Score Analyse:</div>
+        <div class="factors-grid">${factorsHTML}</div>
+      `;
+    }
+
+    // ===== ROUTEN-DETAILS HTML ERSTELLEN =====
+    function createRouteDetailsHTML(route) {
+      const stepsHTML = route.sections.map((section, index) => {
+        const isLast = index === route.sections.length - 1;
+        const time = formatTime(section.departure.departure);
+        
+        let vehicleInfo = '';
+        if (section.journey) {
+          vehicleInfo = `
+            <div class="step-vehicle">
+              <span class="vehicle-badge">${section.journey.category} ${section.journey.number}</span>
+              <span>→ ${section.journey.to}</span>
+            </div>
+          `;
+        }
+        
+        let walkInfo = '';
+        if (section.walk) {
+          const walkMinutes = Math.round(section.walk.duration / 60);
+          walkInfo = `<div class="step-walk">Fußweg (~${walkMinutes} Min.)</div>`;
+        }
+        
+        return `
+          <div class="route-step">
+            <div class="step-indicator">
+              <div class="step-dot ${isLast ? 'end' : ''}"></div>
+              ${!isLast ? '<div class="step-line"></div>' : ''}
+            </div>
+            <div class="step-content">
+              <div class="step-station">${section.departure.station.name}</div>
+              <div class="step-time">${time}</div>
+              ${vehicleInfo}
+              ${walkInfo}
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      // Ziel hinzufügen
+      const finalStep = `
+        <div class="route-step">
+          <div class="step-indicator">
+            <div class="step-dot end"></div>
+          </div>
+          <div class="step-content">
+            <div class="step-station">${route.to.station.name}</div>
+            <div class="step-time">${formatTime(route.to.arrival)}</div>
+          </div>
+        </div>
+      `;
+      
+      return `
+        <div class="route-details">
+          <div class="factors-title">Routenverlauf:</div>
+          ${stepsHTML}
+          ${finalStep}
+        </div>
+      `;
+    }
+
+    // ===== ROUTEN-DETAILS TOGGLE =====
+    // Diese Funktion zeigt/versteckt die Details einer Route
+    function toggleRouteDetails(index) {
+      const factorsSection = document.getElementById(`factors-${index}`);
+      const hint = document.getElementById(`hint-${index}`);
+      const card = document.getElementById(`route-${index}`);
+      
+      // Wenn diese Route bereits ausgewählt ist, schließe sie
+      if (selectedRouteIndex === index) {
+        factorsSection.classList.remove('active');
+        hint.style.display = 'block';
+        card.classList.remove('selected');
+        selectedRouteIndex = null;
+      } else {
+        // Schließe alle anderen Routen
+        allRoutes.forEach((_, i) => {
+          const otherFactors = document.getElementById(`factors-${i}`);
+          const otherHint = document.getElementById(`hint-${i}`);
+          const otherCard = document.getElementById(`route-${i}`);
+          if (otherFactors) otherFactors.classList.remove('active');
+          if (otherHint) otherHint.style.display = 'block';
+          if (otherCard) otherCard.classList.remove('selected');
+        });
+        
+        // Öffne diese Route
+        factorsSection.classList.add('active');
+        hint.style.display = 'none';
+        card.classList.add('selected');
+        selectedRouteIndex = index;
+        
+        // Scrolle zur Karte
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    // ===== HILFSFUNKTIONEN =====
+    function formatTime(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function formatDuration(duration) {
+      const parts = duration.split(':');
+      const days = parts[0] !== '00' ? `${parseInt(parts[0])}d ` : '';
+      const hours = parts[1] !== '00' ? `${parseInt(parts[1])}h ` : '';
+      const minutes = `${parseInt(parts[2])}min`;
+      return days + hours + minutes;
+    }
+
+    // ===== EVENT LISTENERS =====
+    // Autocomplete für Von-Feld
+    document.getElementById('fromStation').addEventListener('input', (e) => {
+      const suggestions = searchStations(e.target.value);
+      showSuggestions('fromStation', suggestions);
+    });
+
+    // Autocomplete für Nach-Feld
+    document.getElementById('toStation').addEventListener('input', (e) => {
+      const suggestions = searchStations(e.target.value);
+      showSuggestions('toStation', suggestions);
+    });
+
+    // Schließe Vorschläge wenn außerhalb geklickt wird
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.form-group')) {
+        document.getElementById('fromSuggestions').classList.remove('active');
+        document.getElementById('toSuggestions').classList.remove('active');
+      }
+    });
+
+    // Form Submit
+    document.getElementById('searchForm').addEventListener('submit', searchRoutes);
+
+    // ===== INITIALISIERUNG =====
+    // Beim Laden der Seite die Wetterdaten abrufen
+    window.addEventListener('DOMContentLoaded', () => {
+      loadWeather();
+      console.log('🚀 Intelligenter Routenvergleich geladen!');
+      console.log('💡 Tipp: Probiere "Zürich HB" und "Zürich Oerlikon" als Beispiel');
+    });
+  </script>
+</body>
+</html>
