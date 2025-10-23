@@ -19,29 +19,64 @@ Eine innovative Web-App, die nicht nur die schnellste, sondern die **angenehmste
    - Entpacken Sie die ZIP-Datei
    - Öffnen Sie `index.html` direkt in Ihrem Browser
 
+### 🎯 Sofort loslegen
 
+1. **Öffnen Sie `index.html`** in Ihrem Webbrowser
+2. **Geben Sie Start und Ziel ein** (z.B. "Zürich HB", "Zürich Oerlikon")
+3. **Klicken Sie auf "Routen vergleichen"**
+4. **Erhalten Sie die komfortabelste Route**
 
-
-
-🎯 Sofort loslegen
-
-Öffnen Sie index.html in Ihrem Webbrowser
-Geben Sie Start und Ziel ein (z.B. "Zürich HB", "Zürich Oerlikon")
-Klicken Sie auf "Routen vergleichen"
-Erhalten Sie die komfortabelste Route
-📊 Comfort Score System
+## 📊 Comfort Score System
 
 Der Score (0-100 Punkte) bewertet Routen basierend auf:
 
-Faktor	Einfluss
-🔄 Umstiege	-8 Punkte pro Umstieg
-🌧️ Wetter	Bis zu -15 Punkte bei Regen
-⏱️ Reisedauer	-3 Punkte pro 10 Min. über 30 Min.
-👥 Stoßzeiten	-10 Punkte bei hoher Auslastung
-⚠️ Knappe Umstiege	-12 Punkte bei <4 Min.
-Bewertungsskala:
+| Faktor | Einfluss |
+|--------|----------|
+| 🔄 Umstiege | -8 Punkte pro Umstieg |
+| 🌧️ Wetter | Bis zu -15 Punkte bei Regen |
+| ⏱️ Reisedauer | -3 Punkte pro 10 Min. über 30 Min. |
+| 👥 Stosszeiten | -10 Punkte bei hoher Auslastung |
+| ⚠️ Knappe Umstiege | -12 Punkte bei <4 Min. |
 
-🟢 80-100 = Exzellent
-🔵 60-79 = Gut
-🟡 40-59 = Akzeptabel
-🔴 0-39 = Schwierig
+**Bewertungsskala:**
+- 🟢 **80-100** = Exzellent
+- 🔵 **60-79** = Gut  
+- 🟡 **40-59** = Akzeptabel
+- 🔴 **0-39** = Schwierig
+
+## 🛠️ Technologien
+
+- **HTML5, CSS3, Vanilla JavaScript**
+- **Transport.opendata.ch API** - ÖV-Verbindungen
+- **Open-Meteo API** - Wetterdaten
+- **CSS Grid & Flexbox** - Responsive Design
+
+## 🌟 Beispiel-Stationen
+
+- Zürich HB
+- Zürich Oerlikon
+- Zürich Stadelhofen  
+- Zürich Altstetten
+- Zürich Bellevue
+
+## 📋 Systemvoraussetzungen
+
+- **Moderner Webbrowser** (Chrome, Firefox, Safari, Edge)
+- **Internetverbindung** (für API-Zugriff)
+- **Keine zusätzliche Software** benötigt
+
+## ❓ FAQ
+
+**F: Funktioniert das offline?**  
+A: Nein, Internetverbindung wird für Verbindungsdaten benötigt.
+
+**F: Unterstützt es meine Stadt?**  
+A: Derzeit fokussiert auf die Schweiz.
+
+**F: Werden meine Daten gespeichert?**  
+A: Nein, alle Berechnungen laufen lokal im Browser.
+
+---
+
+**💡 Einfach herunterladen, öffnen und loslegen!**
+
