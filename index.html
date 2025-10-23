@@ -563,7 +563,7 @@
           <div style="font-size: 20px;">👥</div>
           <div>
             <div class="info-item-title">Auslastungs-Prognose</div>
-            <div class="info-item-text">Stoßzeiten mit hoher Auslastung reduzieren den Komfort</div>
+            <div class="info-item-text">Stosszeiten mit hoher Auslastung reduzieren den Komfort</div>
           </div>
         </div>
         <div class="info-item">
@@ -592,7 +592,7 @@
         <li><strong>Wetterbedingungen:</strong> Wartezeiten bei Regen, Wind oder extremen Temperaturen reduzieren den Score</li>
         <li><strong>Umstiege:</strong> Jeder Umstieg bedeutet Stress - Direktverbindungen bekommen Bonuspunkte</li>
         <li><strong>Umsteigezeiten:</strong> Zu kurze Zeiten (&lt;4 Min.) sind riskant, zu lange (&gt;10 Min.) unangenehm</li>
-        <li><strong>Tageszeit:</strong> Stoßzeiten (7-9 Uhr, 17-19 Uhr) bedeuten hohe Auslastung</li>
+        <li><strong>Tageszeit:</strong> Stosszeiten (7-9 Uhr, 17-19 Uhr) bedeuten hohe Auslastung</li>
         <li><strong>Reisedauer:</strong> Sehr lange Fahrten reduzieren den Komfort</li>
       </ul>
       <p style="margin-top: 12px; font-size: 12px; color: #6b7280;">
@@ -809,7 +809,7 @@ if (weather) {
       name: 'Hitze',
       impact: -6,
       icon: '☀️',
-      description: `Sehr heiß (${weather.temperature}°C)`,
+      description: `Sehr heiss (${weather.temperature}°C)`,
       positive: false
     });
   }
@@ -837,14 +837,14 @@ if (weather) {
       }
       
       // FAKTOR 4: Tageszeit und Auslastung
-      // Zu Stoßzeiten sind die Verkehrsmittel voller
+      // Zu Stosszeiten sind die Verkehrsmittel voller
       const departureTime = new Date(route.sections[0].departure.departure);
       const hour = departureTime.getHours();
       
       if ((hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19)) {
         score -= 10;
         factors.push({
-          name: 'Stoßzeit',
+          name: 'Stosszeit',
           impact: -10,
           icon: '👥',
           description: 'Hohe Auslastung zu erwarten',
@@ -1104,7 +1104,7 @@ if (weather) {
         let walkInfo = '';
         if (section.walk) {
           const walkMinutes = Math.round(section.walk.duration / 60);
-          walkInfo = `<div class="step-walk">Fußweg (~${walkMinutes} Min.)</div>`;
+          walkInfo = `<div class="step-walk">Fussweg (~${walkMinutes} Min.)</div>`;
         }
         
         return `
@@ -1152,14 +1152,14 @@ if (weather) {
       const hint = document.getElementById(`hint-${index}`);
       const card = document.getElementById(`route-${index}`);
       
-      // Wenn diese Route bereits ausgewählt ist, schließe sie
+      // Wenn diese Route bereits ausgewählt ist, schliesse sie
       if (selectedRouteIndex === index) {
         factorsSection.classList.remove('active');
         hint.style.display = 'block';
         card.classList.remove('selected');
         selectedRouteIndex = null;
       } else {
-        // Schließe alle anderen Routen
+        // Schliesse alle anderen Routen
         allRoutes.forEach((_, i) => {
           const otherFactors = document.getElementById(`factors-${i}`);
           const otherHint = document.getElementById(`hint-${i}`);
@@ -1207,7 +1207,7 @@ if (weather) {
       showSuggestions('toStation', suggestions);
     });
 
-    // Schließe Vorschläge wenn außerhalb geklickt wird
+    // Schliesse Vorschläge wenn ausserhalb geklickt wird
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.form-group')) {
         document.getElementById('fromSuggestions').classList.remove('active');
